@@ -156,7 +156,8 @@ a_sharp = num.roll(KK_C_Minor_Profile, 10)
 b = num.roll(KK_C_Minor_Profile, 11)
 Key_profile_matrix = num.vstack((Key_profile_matrix, KK_C_Minor_Profile, c_sharp, d, d_sharp, e, f, f_sharp, g, g_sharp, a, a_sharp, b))
 
-print(Key_profile_matrix)
-print(Key_profile_matrix.shape)
+#print(Key_profile_matrix)
+#print(Key_profile_matrix.shape)
 
-
+lookupVector_same = num.array([0, 0.83, 0.33, 0.5, 0.67, 0.17, 1, 0.17, 0.67, 0.5, 0.33, 0.83])
+lookupVector_different =num.array([0.58, 0.58, 0.25, 0.92, 0.08, 0.75, 0.42, 0.42, 0.75, 0.08, 0.92, 0.25])
