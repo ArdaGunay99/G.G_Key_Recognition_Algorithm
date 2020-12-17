@@ -160,4 +160,4 @@ Key_profile_matrix = num.vstack((Key_profile_matrix, KK_C_Minor_Profile, c_sharp
 #print(Key_profile_matrix.shape)
 
 lookupVector_same = num.array([0, 0.83, 0.33, 0.5, 0.67, 0.17, 1, 0.17, 0.67, 0.5, 0.33, 0.83])
-lookupVector_different =num.array([0.58, 0.58, 0.25, 0.92, 0.08, 0.75, 0.42, 0.42, 0.75, 0.08, 0.92, 0.25])
+lookupVector_different = num.array([0.58, 0.58, 0.25, 0.92, 0.08, 0.75, 0.42, 0.42, 0.75, 0.08, 0.92, 0.25])
