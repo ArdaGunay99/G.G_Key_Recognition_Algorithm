@@ -47,7 +47,8 @@ def TruthIntoArray(fileLocation):
             truth = num.append(truth, int(row[1]))
     return truth
 
-#these are our observesions and ground truth arrays
+
+# these are our observesions and ground truth arrays
 barbiePresence = CsvIntoMatrix("./BarbieGirlPresence.csv")
 barbieOccurrence = CsvIntoMatrix("./BarbieGirlOccurrence.csv")
 barbieDuration = CsvIntoMatrix("./BarbieGirlDuration.csv")
@@ -128,7 +129,7 @@ tmbaOccurrence = CsvIntoMatrix("./TMBAOccurrence.csv")
 tmbaDuration = CsvIntoMatrix("./TMBADuration.csv")
 tmbaTruth = TruthIntoArray("./TMBATruth.csv")
 
-#creating the key profile matrix
+# creating the key profile matrix
 KK_C_Major_Profile = num.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
 c_sharp = num.roll(KK_C_Major_Profile, 1)
 d = num.roll(KK_C_Major_Profile, 2)
@@ -141,7 +142,7 @@ g_sharp = num.roll(KK_C_Major_Profile, 8)
 a = num.roll(KK_C_Major_Profile, 9)
 a_sharp = num.roll(KK_C_Major_Profile, 10)
 b = num.roll(KK_C_Major_Profile, 11)
-Key_profile_matrix = num.vstack((KK_C_Major_Profile,c_sharp,d,d_sharp,e,f,f_sharp,g,g_sharp,a,a_sharp,b))
+Key_profile_matrix = num.vstack((KK_C_Major_Profile, c_sharp, d, d_sharp, e, f, f_sharp, g, g_sharp, a, a_sharp, b))
 
 KK_C_Minor_Profile = num.array([6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17])
 c_sharp = num.roll(KK_C_Minor_Profile, 1)
@@ -156,10 +157,72 @@ a = num.roll(KK_C_Minor_Profile, 9)
 a_sharp = num.roll(KK_C_Minor_Profile, 10)
 b = num.roll(KK_C_Minor_Profile, 11)
 
-#this is our emission matrix
-Key_profile_matrix = num.vstack((Key_profile_matrix, KK_C_Minor_Profile, c_sharp, d, d_sharp, e, f, f_sharp, g, g_sharp, a, a_sharp, b))
+# this is our emission matrix
+Key_profile_matrix = num.vstack(
+    (Key_profile_matrix, KK_C_Minor_Profile, c_sharp, d, d_sharp, e, f, f_sharp, g, g_sharp, a, a_sharp, b))
 
-
-#these will be used for validating our results
+# these will be used for validating our results
 lookupVector_same = num.array([0, 0.83, 0.33, 0.5, 0.67, 0.17, 1, 0.17, 0.67, 0.5, 0.33, 0.83])
 lookupVector_different = num.array([0.58, 0.58, 0.25, 0.92, 0.08, 0.75, 0.42, 0.42, 0.75, 0.08, 0.92, 0.25])
+
+
+def nextRow(previousRow):
+    next_row = num.array([])
+    for i in range(0, len(previousRow)):
+        if i == 0:
+            next_row = num.append(next_row, float(previousRow[11]))
+        elif i == 12:
+            next_row = num.append(next_row, float(previousRow[23]))
+        else:
+            next_row = num.append(next_row, float(previousRow[i - 1]))
+    return next_row
+
+
+# these are major rows of transition probability matrix
+C = num.array([0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009, 0.09,
+               0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.09, 0.00009, 0.00009])
+Cs = num.array(
+    [0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.00009, 0.09,
+     0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.09, 0.00009])
+D = num.array(
+    [0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.00009,
+     0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.09])
+Ds = num.array(
+    [0.0009, 0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.09, 0.00009,
+     0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009])
+E = num.array(
+    [0.00009, 0.0009, 0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00000009,
+     0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009, 0.0000009, 0.009])
+F = num.array(
+    [0.09, 0.00009, 0.0009, 0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.009,
+     0.00000009, 0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009, 0.0000009])
+Fs = num.array(
+    [0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.0000009,
+     0.009, 0.00000009, 0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009])
+G = nextRow(Fs)
+Gs = nextRow(G)
+A = nextRow(Gs)
+As = nextRow(A)
+B = nextRow(As)
+
+# these are minor rows of transition probability matrix
+c = num.array(
+    [0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.9,
+     0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009])
+cs = nextRow(c)
+d = nextRow(cs)
+ds = nextRow(d)
+e = nextRow(ds)
+f = nextRow(e)
+fs = nextRow(f)
+g = nextRow(fs)
+gs = nextRow(g)
+a = nextRow(gs)
+ash = nextRow(a)  # a sharp minor
+b = nextRow(ash)
+
+#this is our transition probability distributions of size (24,24)
+transition_probability_matrix = num.vstack(
+    (C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B, c, cs, d, ds, e, f, fs, g, gs, a, ash, b))
+print(transition_probability_matrix)
+print(num.shape(transition_probability_matrix))
