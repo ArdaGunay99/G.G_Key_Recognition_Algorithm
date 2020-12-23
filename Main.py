@@ -2,7 +2,7 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as num
 
-
+# This function takes the file location and converts it into a matrix.
 def CsvIntoMatrix(fileLocation):
     c = num.array([])
     cSharp = num.array([])
@@ -37,7 +37,7 @@ def CsvIntoMatrix(fileLocation):
     matrix = matrix.transpose()
     return matrix
 
-
+# This function takes a file location and converts it into an array.
 def TruthIntoArray(fileLocation):
     truth = num.array([])
     with open(fileLocation, encoding="Latin-1") as z:
@@ -48,7 +48,13 @@ def TruthIntoArray(fileLocation):
     return truth
 
 
-# these are our observesions and ground truth arrays
+# These are our observation matrices and ground truth arrays. Each row in a matrix holds the observation values of a measure.
+# The current measure's key represents the value of the current state in our model. There is a total of 24 different state values. We use the transition probability
+# matrix with our previous state to calculate the probabilities of the next state's value.
+# We use the Emission matrix on our observation to determine the value of the current state with respect to the probabilities acquired from the transition probabilities mentioned above.
+# An observation holds a value for each of the 12 notes. This value may refer to the note's presence, duration or occurrence in that measure.
+# If a note does not exists in that observation, its value will be zero in all three cases mentioned above.
+# Truth arrays will be used to calculate our model's accuracy.
 barbiePresence = CsvIntoMatrix("./BarbieGirlPresence.csv")
 barbieOccurrence = CsvIntoMatrix("./BarbieGirlOccurrence.csv")
 barbieDuration = CsvIntoMatrix("./BarbieGirlDuration.csv")
@@ -129,7 +135,7 @@ tmbaOccurrence = CsvIntoMatrix("./TMBAOccurrence.csv")
 tmbaDuration = CsvIntoMatrix("./TMBADuration.csv")
 tmbaTruth = TruthIntoArray("./TMBATruth.csv")
 
-# creating the key profile matrix
+# creating the key profile matrix proposed by Krumhansl and Kessler
 KK_C_Major_Profile = num.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
 c_sharp = num.roll(KK_C_Major_Profile, 1)
 d = num.roll(KK_C_Major_Profile, 2)
@@ -157,7 +163,7 @@ a = num.roll(KK_C_Minor_Profile, 9)
 a_sharp = num.roll(KK_C_Minor_Profile, 10)
 b = num.roll(KK_C_Minor_Profile, 11)
 
-# this is our emission matrix
+# this is our emission matrix which will be used on our observations
 Key_profile_matrix = num.vstack(
     (Key_profile_matrix, KK_C_Minor_Profile, c_sharp, d, d_sharp, e, f, f_sharp, g, g_sharp, a, a_sharp, b))
 
@@ -178,7 +184,7 @@ def nextRow(previousRow):
     return next_row
 
 
-# these are major rows of transition probability matrix
+# these are major rows of transition probability matrix these will be used to construct the transition probability distribution matrix
 C = num.array([0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009, 0.09,
                0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.09, 0.00009, 0.00009])
 Cs = num.array(
@@ -205,7 +211,7 @@ A = nextRow(Gs)
 As = nextRow(A)
 B = nextRow(As)
 
-# these are minor rows of transition probability matrix
+# these are minor rows of transition probability matrix, these will be used to construct the transition probability distribution matrix
 c = num.array(
     [0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.9,
      0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009])
@@ -224,5 +230,5 @@ b = nextRow(ash)
 #this is our transition probability distributions of size (24,24)
 transition_probability_matrix = num.vstack(
     (C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B, c, cs, d, ds, e, f, fs, g, gs, a, ash, b))
-print(transition_probability_matrix)
-print(num.shape(transition_probability_matrix))
+#print(transition_probability_matrix)
+#print(num.shape(transition_probability_matrix))
