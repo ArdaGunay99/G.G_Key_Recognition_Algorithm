@@ -1,6 +1,7 @@
 import csv
 import matplotlib.pyplot as plt
 import numpy as num
+from hmmlearn import hmm
 
 # This function takes the file location and converts it into a matrix.
 def CsvIntoMatrix(fileLocation):
@@ -210,7 +211,6 @@ Gs = nextRow(G)
 A = nextRow(Gs)
 As = nextRow(A)
 B = nextRow(As)
-
 # these are minor rows of transition probability matrix, these will be used to construct the transition probability distribution matrix
 c = num.array(
     [0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.9,
@@ -232,3 +232,111 @@ transition_probability_matrix = num.vstack(
     (C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B, c, cs, d, ds, e, f, fs, g, gs, a, ash, b))
 #print(transition_probability_matrix)
 #print(num.shape(transition_probability_matrix))
+initial_state_probs=num.array([])
+states=num.array([])
+for i in range(24):
+    states=num.append(states,i)
+observation_symbols=num.array([])
+for i in range(12):
+    observation_symbols=num.append(observation_symbols,i)
+for i in range(24):
+    initial_state_probs=num.append(initial_state_probs,1/24);
+
+
+class viterbiAlgorithm():
+    _transitionMatrix="" #transition_probability_matrix,taken from Arda's calculations
+    _emissionMatrix="" #Key_profile_matrix, taken from the key probability matrix of pre determined data
+    _observationMatrix="" #observation_symbols,12 pitch classes reduced to int
+    _initial_state_probs="" #initial state probs,1/24 for each variable
+    _states="" #24 states for each of the 24 musical keys reduced to int
+    
+    def initialStateProbs(self):
+        for i in range(24):
+            self._initial_state_probs=num.append(self._initial_state_probs,1/24)
+    def states(self):
+        for i in range(24):
+            self._states=num.append(self._states,i)
+    def observationMatrix(self):
+        for i in range(12):
+            self._observationMatrix=num.append(self._observationMatrix,i)
+    def setObservationMatrix(self,observationMatrix):
+        self._observationMatrix=observationMatrix
+    def __init__(self,transitionMatrix,emissionMatrix,observationMatrix,states,initialStateProbs):
+        self._transitionMatrix=transitionMatrix
+        self._emissionMatrix=emissionMatrix
+        self._observationMatrix=observationMatrix
+        self._states=states
+        self._initial_state_probs=initialStateProbs
+    #this is the implementation that I have made by keeping our algorithm in mind
+    #this worked for my inputs,but I don't know about the array inputs for our project
+    #fix the issues with arrays and we will figure out the next step from there
+    def runAlgorithm(self):
+        result=[{}]
+        for st in self._states:
+            result[0][st]={"prob":self._initial_state_probs[st]*self._transitionMatrix[st][self._observationMatrix[0]],"prev":None}
+        for t in range(1,len(self._observationMatrix)):
+            result.append({})
+            for state in self._states:
+                max_tr_prob=result[t-1][self._states[0]]["prob"]*self._transitionMatrix[self._states[0]][state]
+                prev_state_selected=self._states[0]
+                for prev_st in self._states[1:]:
+                    tr_prob=result[t-1][prev_st]["prob"]*self._transitionMatrix[prev_st][state]
+                    if tr_prob>max_tr_prob:
+                        max_tr_prob=tr_prob
+                        prev_state_selected=prev_st
+                max_prob=max_tr_prob*self._emissionMatrix[state][self._observationMatrix[t]]
+                result[t][state]={"prob":max_prob,"prev":prev_state_selected}
+        opt=[]
+        max_prob=0.0
+        best_st=None
+        for state,data in result[-1].items():
+            if data["prob"] > max_prob:
+                max_prob=data["prob"]
+                best_st=state
+        opt.append(best_st)
+        previous=best_st
+    
+    
+#this is abstract and does not work right now
+class viterbi:
+    def viterbi (self,observations):
+        # A - initialise stuff
+        nSamples = len(observations[0])
+        nStates = self.transition.shape[0] # number of states
+        c = num.zeros(nSamples) #scale factors (necessary to prevent underflow)
+        viterbi = num.zeros((nStates,nSamples)) # initialise viterbi table
+        psi = num.zeros((nStates,nSamples)) # initialise the best path table
+        best_path = num.zeros(nSamples); # this will be your output
+
+        # B- appoint initial values for viterbi and best path (bp) tables - Eq (32a-32b)
+        viterbi[:,0] = self.priors.T * self.emission[:,observations(0)]
+        c[0] = 1.0/num.sum(viterbi[:,0])
+        viterbi[:,0] = c[0] * viterbi[:,0] # apply the scaling factor
+        psi[0] = 0;
+
+    # C- Do the iterations for viterbi and psi for time>0 until T
+        for t in range(1,nSamples): # loop through time
+            for s in range (0,nStates): # loop through the states @(t-1)
+                trans_p = viterbi[:,t-1] * self.transition[:,s]
+                psi[s,t], viterbi[s,t] = max(enumerate(trans_p), key=operator.itemgetter(1))
+                viterbi[s,t] = viterbi[s,t]*self.emission[s,observations(t)]
+
+            c[t] = 1.0/num.sum(viterbi[:,t]) # scaling factor
+            viterbi[:,t] = c[t] * viterbi[:,t]
+
+        # D - Back-tracking
+        best_path[nSamples-1] =  viterbi[:,nSamples-1].argmax() # last state
+        for t in range(nSamples-1,0,-1): # states of (last-1)th to 0th time step
+            best_path[t-1] = psi[best_path[t],t]
+        print(best_path)
+        
+        
+        
+         
+
+
+#viterbi=viterbiAlgorithm(trans_p,emit_p,obs,states,start_p)
+#viterbi.runAlgorithm()
+
+
+
