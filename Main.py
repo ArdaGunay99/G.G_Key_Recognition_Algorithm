@@ -335,6 +335,20 @@ def calculateDistance(computed, truth):
     return distanceValues, totalDistance
 
 
+def calculateScore(computed, actual):
+    score = 0
+    for i in range(len(computed)):
+        if int(abs(computed[i]-actual[i])) == 0:
+            score = score + 1
+        elif int(abs(computed[i]-actual[i])) == 12:  # parallel major/minor
+            score = score + 0.2
+        elif int(abs(computed[i]-actual[i])) == 21:  # relative major/minor
+            score = score + 0.3
+        elif int(abs(computed[i]-actual[i])) == 7:  # perfect fifth
+            score = score + 0.5
+    return score/len(computed)
+
+
 def step(mu_prev: num.ndarray,
          emission_probs: num.ndarray,
          transition_probs: num.ndarray,
@@ -433,10 +447,13 @@ def runViterbi(key_matrix, observation, truth):
     print(truth)
     # print(seq_prob)
     distanceValues, totalDistance = calculateDistance(max_seq, truth)
+    score = calculateScore(max_seq, truth)
     print("distanceValues: ")
     print(distanceValues)
     print("totalDistance: ")
     print(totalDistance)
+    print("score: ")
+    print(score)
     # plotting the results
     plt.figure()
     plt.title("Key Values for given observations")
@@ -449,7 +466,7 @@ def runViterbi(key_matrix, observation, truth):
 
 
 # running the algorithm with given key profile and observation file
-runViterbi(S, tmbaDuration, tmbaTruth)
+runViterbi(S, song2Occurrence, song2Truth)
 
 
 class viterbiAlgorithm():
