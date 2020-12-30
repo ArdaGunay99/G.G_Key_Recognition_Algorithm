@@ -51,6 +51,95 @@ def TruthIntoArray(fileLocation):
     return truth
 
 
+# This function is used to create the transition probability distribution matrix
+def nextRow(previousRow):
+    next_row = num.array([])
+    for i in range(0, len(previousRow)):
+        if i == 0:
+            next_row = num.append(next_row, float(previousRow[11]))
+        elif i == 12:
+            next_row = num.append(next_row, float(previousRow[23]))
+        else:
+            next_row = num.append(next_row, float(previousRow[i - 1]))
+    return next_row
+
+
+# this function is used to change the transitio probability arrays of C major and C minor
+def changeTransitionArray(arr, _all):
+    temp = arr
+    for i in range(len(temp)):
+        if temp[i] == 0.9:
+            temp[i] = _all[0]
+        elif temp[i] == 0.09:
+            temp[i] = _all[1]
+        elif temp[i] == 0.009:
+            temp[i] = _all[2]
+        elif temp[i] == 0.0009:
+            temp[i] = _all[3]
+        elif temp[i] == 0.00009:
+            temp[i] = _all[4]
+        elif temp[i] == 0.000009:
+            temp[i] = _all[5]
+        elif temp[i] == 0.0000009:
+            temp[i] = _all[6]
+        elif temp[i] == 0.00000009:
+            temp[i] = _all[7]
+        elif temp[i] == 0.000000009:
+            temp[i] = _all[8]
+    return temp
+
+
+# this function creates our transition probability distributions matrix of size (24,24) and with the given ratio
+def createTransitionMatrix(ratio):
+    _next = ratio
+    _all = num.array([ratio])
+    for i in range(8):
+        _next = _next / ratio
+        _all = num.append(_all, _next)
+    _sum = sum(_all)
+    for i in range(len(_all)):
+        _all[i] = _all[i] / _sum
+    cMaj = num.array(
+        [0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009, 0.09,
+         0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.09, 0.00009, 0.00009])
+    cMin = num.array(
+        [0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.9,
+         0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009])
+    # these are major rows of transition probability matrix these will be used
+    # to construct the transition probability distribution matrix
+    cMaj = changeTransitionArray(cMaj, _all)
+    Cs = nextRow(cMaj)
+    D = nextRow(Cs)
+    Ds = nextRow(D)
+    E = nextRow(Ds)
+    F = nextRow(E)
+    Fs = nextRow(F)
+    G = nextRow(Fs)
+    Gs = nextRow(G)
+    A = nextRow(Gs)
+    As = nextRow(A)
+    B = nextRow(As)
+
+    # these are minor rows of transition probability matrix
+    cMin = changeTransitionArray(cMin, _all)
+    cs = nextRow(cMin)
+    d = nextRow(cs)
+    ds = nextRow(d)
+    e = nextRow(ds)
+    f = nextRow(e)
+    fs = nextRow(f)
+    g = nextRow(fs)
+    gs = nextRow(g)
+    a = nextRow(gs)
+    ash = nextRow(a)  # a sharp minor
+    b = nextRow(ash)
+
+    transition_probability_matrix = num.vstack(
+        (cMaj, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B, cMin, cs, d, ds, e, f, fs, g, gs, a, ash, b))
+
+    return transition_probability_matrix
+
+
 # this is our Key profile matrix which will be used on our observations to create our emission probability matrix
 # This function will create the key profile matrix from its C major and c minor rows
 def createKeyProfileMatrix(cMajor, cMinor):
@@ -179,7 +268,6 @@ KK_C_Minor_Profile = num.array([0.14221523253201526, 0.06021118849696697, 0.0790
                                 0.12087171422152324, 0.05841383958660975, 0.07930802066951245,
                                 0.05706582790384183, 0.1067175915524601, 0.08941810829027184,
                                 0.06043585711076162, 0.07503931700741405, 0.07121995057290496])
-KK = createKeyProfileMatrix(KK_C_Major_Profile, KK_C_Minor_Profile)
 
 Aarden_Essen_C_Major_Profile = num.array([0.17766092893562843, 0.001456239417504233, 0.1492649402940239,
                                           0.0016018593592562562, 0.19804892078043168, 0.11358695456521818,
@@ -189,8 +277,6 @@ Aarden_Essen_C_Minor_Profile = num.array([0.18264800547944018, 0.007376190221285
                                           0.16859900505797015, 0.0070249402107482066, 0.14436200433086013,
                                           0.0070249402107482066, 0.18616100558483017, 0.04566210136986304,
                                           0.019318600579558018, 0.07376190221285707, 0.017562300526869017])
-AE = createKeyProfileMatrix(Aarden_Essen_C_Major_Profile, Aarden_Essen_C_Minor_Profile)
-
 
 Bellman_Budge_C_Major_Profile = num.array([0.168, 0.0086, 0.1295, 0.0141, 0.1349, 0.1193,
                                            0.0125, 0.2028, 0.018000000000000002, 0.0804, 0.0062, 0.1057])
@@ -198,8 +284,6 @@ Bellman_Budge_C_Minor_Profile = num.array([0.1816, 0.0069, 0.12990000000000002,
                                            0.1334, 0.010700000000000001, 0.1115,
                                            0.0138, 0.2107, 0.07490000000000001,
                                            0.015300000000000001, 0.0092, 0.10210000000000001])
-BB = createKeyProfileMatrix(Bellman_Budge_C_Major_Profile, Bellman_Budge_C_Minor_Profile)
-
 
 Sapp_C_Major_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.0,
                                   0.1111111111111111, 0.1111111111111111, 0.0, 0.2222222222222222,
@@ -207,7 +291,6 @@ Sapp_C_Major_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0
 Sapp_C_Minor_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.1111111111111111,
                                   0.0, 0.1111111111111111, 0.0, 0.2222222222222222,
                                   0.1111111111111111, 0.0, 0.05555555555555555, 0.05555555555555555])
-S = createKeyProfileMatrix(Sapp_C_Major_Profile, Sapp_C_Minor_Profile)
 
 Temperley_C_Major_Profile = num.array([0.17616580310880825, 0.014130946773433817, 0.11493170042392838,
                                        0.019312293923692884, 0.15779557230334432, 0.10833725859632594,
@@ -217,82 +300,84 @@ Temperley_C_Minor_Profile = num.array([0.1702127659574468, 0.020081281377002155,
                                        0.14774085584508725, 0.011714080803251255, 0.10996892182644036,
                                        0.02510160172125269, 0.1785799665311977, 0.09658140090843893,
                                        0.016017212526894576, 0.03179536218025341, 0.07889074826679417])
-T = createKeyProfileMatrix(Temperley_C_Major_Profile, Temperley_C_Minor_Profile)
 
 Albrecht_Shanahan_C_Major_Profile = num.array([0.238, 0.006, 0.111, 0.006, 0.137, 0.094,
                                                0.016, 0.214, 0.009, 0.080, 0.008, 0.081])
 Albrecht_Shanahan_C_Minor_Profile = num.array([0.220, 0.006, 0.104, 0.123, 0.019, 0.103,
                                                0.012, 0.214, 0.062, 0.022, 0.061, 0.052])
+
+Albrecht_Shanahan2_C_Major_Profile = num.array([0.21169, 0.00892766, 0.120448, 0.0100265, 0.131444, 0.0911768,
+                                                0.0215947, 0.204703, 0.012894, 0.0900445, 0.012617, 0.0844338])
+Albrecht_Shanahan2_C_Minor_Profile = num.array([0.201933, 0.009335, 0.107284, 0.124169, 0.0199224, 0.108324,
+                                                0.014314, 0.202699, 0.0653907, 0.0252515, 0.071959, 0.049419])
+
+Temperley_Sapp_C_Major_Profile = num.array([0.17616580310880825, 0.014130946773433817, 0.11493170042392838,
+                                            0.019312293923692884, 0.15779557230334432, 0.10833725859632594,
+                                            0.02260951483749411, 0.17329251059821005, 0.01959491285916156,
+                                            0.08619877531794629, 0.013424399434762127, 0.09420631182289213])
+Temperley_Sapp_C_Minor_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.12222222222222222,
+                                            0.0, 0.1111111111111111, 0.008888888888888889, 0.2222222222222222,
+                                            0.1111111111111111, 0.0, 0.05555555555555555, 0.03555555555555555])
+
+Napoles6_C_Major_Profile = num.array([0.13675520459440055, 0.0533620483369227, 0.08327351040918879,
+                                      0.05575496530270399, 0.12000478583393154, 0.09787030390045463,
+                                      0.06030150753768843, 0.1241923905240488, 0.05719071548217276,
+                                      0.08758076094759511, 0.05479779851639147, 0.06891600861450106])
+Napoles6_C_Minor_Profile = num.array([0.14221523253201526, 0.06021118849696697, 0.07908335205571781,
+                                      0.12087171422152324, 0.05841383958660975, 0.07930802066951245,
+                                      0.05706582790384183, 0.1067175915524601, 0.08941810829027184,
+                                      0.06043585711076162, 0.07503931700741405, 0.07121995057290496])
+
+Napoles128_C_Major_Profile = num.array([0.136755204594401, 0.065608997367791, 0.074946159368270,
+                                        0.050179468772434, 0.100358937544867, 0.103445800430725,
+                                        0.054271356783920, 0.139387413256760, 0.060904522613065,
+                                        0.087580760947595, 0.049318018664752, 0.077243359655420])
+Napoles128_C_Minor_Profile = num.array([0.148236351381712, 0.048771062682543, 0.079083352055718,
+                                        0.120871714221523, 0.047315210065154, 0.079308020669512,
+                                        0.068950797573579, 0.096045832397214, 0.101959110312289,
+                                        0.059649516962480, 0.085711076162660, 0.064097955515614])
+# simple natural minor
+SNM_Major_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.0,
+                               0.1111111111111111, 0.1111111111111111, 0.0, 0.2222222222222222,
+                               0.0, 0.1111111111111111, 0.0, 0.1111111111111111])
+SNM_Minor_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.1111111111111111,
+                               0.0, 0.1111111111111111, 0.0, 0.2222222222222222,
+                               0.1111111111111111, 0.0, 0.1111111111111111, 0.0])
+# simple harmonic minor
+SHM_Major_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.0,
+                               0.1111111111111111, 0.1111111111111111, 0.0, 0.2222222222222222,
+                               0.0, 0.1111111111111111, 0.0, 0.1111111111111111])
+SHM_Minor_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.1111111111111111,
+                               0.0, 0.1111111111111111, 0.0, 0.2222222222222222,
+                               0.1111111111111111, 0.0, 0.0, 0.1111111111111111])
+
+# simple melodic minor
+SMM_Major_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.0,
+                               0.1111111111111111, 0.1111111111111111, 0.0, 0.2222222222222222,
+                               0.0, 0.1111111111111111, 0.0, 0.1111111111111111])
+SMM_Minor_Profile = num.array([0.2222222222222222, 0.0, 0.1111111111111111, 0.1111111111111111,
+                               0.0, 0.1111111111111111, 0.0, 0.2222222222222222,
+                               0.05555555555555555, 0.05555555555555555, 0.05555555555555555, 0.05555555555555555])
+
+# creating the key profile matrices
+KK = createKeyProfileMatrix(KK_C_Major_Profile, KK_C_Minor_Profile)
+AE = createKeyProfileMatrix(Aarden_Essen_C_Major_Profile, Aarden_Essen_C_Minor_Profile)
+BB = createKeyProfileMatrix(Bellman_Budge_C_Major_Profile, Bellman_Budge_C_Minor_Profile)
+S = createKeyProfileMatrix(Sapp_C_Major_Profile, Sapp_C_Minor_Profile)
+T = createKeyProfileMatrix(Temperley_C_Major_Profile, Temperley_C_Minor_Profile)
 AS = createKeyProfileMatrix(Albrecht_Shanahan_C_Major_Profile, Albrecht_Shanahan_C_Minor_Profile)
-
-
+AS2 = createKeyProfileMatrix(Albrecht_Shanahan2_C_Major_Profile, Albrecht_Shanahan2_C_Minor_Profile)
+TS = createKeyProfileMatrix(Temperley_Sapp_C_Major_Profile, Temperley_Sapp_C_Minor_Profile)
+N6 = createKeyProfileMatrix(Napoles6_C_Major_Profile, Napoles6_C_Minor_Profile)
+N128 = createKeyProfileMatrix(Napoles128_C_Major_Profile, Napoles128_C_Minor_Profile)
+SNM = createKeyProfileMatrix(SNM_Major_Profile,SNM_Minor_Profile)
+SHM = createKeyProfileMatrix(SHM_Major_Profile,SHM_Minor_Profile)
+SMM = createKeyProfileMatrix(SMM_Major_Profile,SMM_Minor_Profile)
 
 
 # these will be used for validating our results
 lookupVector_same = num.array([0, 0.83, 0.33, 0.5, 0.67, 0.17, 1, 0.17, 0.67, 0.5, 0.33, 0.83])
 lookupVector_different = num.array([0.58, 0.58, 0.25, 0.92, 0.08, 0.75, 0.42, 0.42, 0.75, 0.08, 0.92, 0.25])
-
-
-# This function is used to create the transition probability distribution matrix
-def nextRow(previousRow):
-    next_row = num.array([])
-    for i in range(0, len(previousRow)):
-        if i == 0:
-            next_row = num.append(next_row, float(previousRow[11]))
-        elif i == 12:
-            next_row = num.append(next_row, float(previousRow[23]))
-        else:
-            next_row = num.append(next_row, float(previousRow[i - 1]))
-    return next_row
-
-
-# these are major rows of transition probability matrix these will be used
-# to construct the transition probability distribution matrix
-C = num.array([0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009, 0.09,
-               0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.09, 0.00009, 0.00009])
-Cs = num.array(
-    [0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.00009, 0.09,
-     0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.09, 0.00009])
-D = num.array(
-    [0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.00009,
-     0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.09])
-Ds = num.array(
-    [0.0009, 0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.09, 0.00009,
-     0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009])
-E = num.array(
-    [0.00009, 0.0009, 0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00000009,
-     0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009, 0.0000009, 0.009])
-F = num.array(
-    [0.09, 0.00009, 0.0009, 0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.009,
-     0.00000009, 0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009, 0.0000009])
-Fs = num.array(
-    [0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009, 0.9, 0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.0000009,
-     0.009, 0.00000009, 0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.09, 0.0000009, 0.009, 0.009])
-G = nextRow(Fs)
-Gs = nextRow(G)
-A = nextRow(Gs)
-As = nextRow(A)
-B = nextRow(As)
-
-# these are minor rows of transition probability matrix, these will be used to construct the transition probability distribution matrix
-c = num.array(
-    [0.09, 0.00009, 0.00009, 0.09, 0.00000009, 0.009, 0.0000009, 0.009, 0.009, 0.0000009, 0.009, 0.00000009, 0.9,
-     0.000009, 0.0009, 0.0009, 0.00009, 0.09, 0.000000009, 0.09, 0.00009, 0.0009, 0.0009, 0.000009])
-cs = nextRow(c)
-d = nextRow(cs)
-ds = nextRow(d)
-e = nextRow(ds)
-f = nextRow(e)
-fs = nextRow(f)
-g = nextRow(fs)
-gs = nextRow(g)
-a = nextRow(gs)
-ash = nextRow(a)  # a sharp minor
-b = nextRow(ash)
-
-# this is our transition probability distributions of size (24,24) and with ratio 10
-transition_probability_matrix = num.vstack(
-    (C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B, c, cs, d, ds, e, f, fs, g, gs, a, ash, b))
 
 
 # This function iteratively takes dot product of each row in our observation matrix and our key profile matrix
@@ -338,15 +423,15 @@ def calculateDistance(computed, truth):
 def calculateScore(computed, actual):
     score = 0
     for i in range(len(computed)):
-        if int(abs(computed[i]-actual[i])) == 0:
+        if int(abs(computed[i] - actual[i])) == 0:
             score = score + 1
-        elif int(abs(computed[i]-actual[i])) == 12:  # parallel major/minor
+        elif int(abs(computed[i] - actual[i])) == 12:  # parallel major/minor
             score = score + 0.2
-        elif int(abs(computed[i]-actual[i])) == 21:  # relative major/minor
+        elif int(abs(computed[i] - actual[i])) == 21:  # relative major/minor
             score = score + 0.3
-        elif int(abs(computed[i]-actual[i])) == 7:  # perfect fifth
+        elif int(abs(computed[i] - actual[i])) == 7:  # perfect fifth
             score = score + 0.5
-    return score/len(computed)
+    return score / len(computed)
 
 
 def step(mu_prev: num.ndarray,
@@ -418,7 +503,7 @@ def viterbi(emission_probs: num.ndarray,
 
 # this function runs the viterbi algorithm implemented above and prints the computed values, actual values,
 # distance values and total distance
-def runViterbi(key_matrix, observation, truth):
+def runViterbi(key_matrix, transition_ratio, observation, truth):
     states = num.array([])
     for i in range(24):
         states = num.append(states, i)
@@ -431,7 +516,7 @@ def runViterbi(key_matrix, observation, truth):
     observations = convertObservationMatrixIntoArray(observation)
     max_seq, seq_prob = viterbi(
         emissions,
-        transition_probability_matrix,
+        createTransitionMatrix(transition_ratio),
         initProbs,
         observations,
     )
@@ -440,33 +525,69 @@ def runViterbi(key_matrix, observation, truth):
         max_seq[i] = max_seq[i] + 1
     # accurates with KK: crazy, japan, chiquitita, dancing queen, godzilla, deep, New world Symphony(almost),
     # oneDay(relative major), polovtsian(relative major), poto(meh), ppfc, stayin alive
-    print("algorithm values: ")
-    print(max_seq)
-    print(len(max_seq))
-    print("actual values: ")
-    print(truth)
-    # print(seq_prob)
+    # print("algorithm values: ")
+    # print(max_seq)
+    # print(len(max_seq))
+    # print("actual values: ")
+    # print(truth)
+    # # print(seq_prob)
     distanceValues, totalDistance = calculateDistance(max_seq, truth)
     score = calculateScore(max_seq, truth)
-    print("distanceValues: ")
-    print(distanceValues)
-    print("totalDistance: ")
-    print(totalDistance)
-    print("score: ")
-    print(score)
+    # print("distanceValues: ")
+    # print(distanceValues)
+    # print("totalDistance: ")
+    # print(totalDistance)
+    # print("score: ")
+    # print(score)
+
     # plotting the results
-    plt.figure()
-    plt.title("Key Values for given observations")
-    plt.scatter(observations, max_seq, label="calculated values", c="r", marker="x")
-    plt.scatter(observations, truth, label="actual values", c="b", marker="+")
-    plt.xlabel("observation")
-    plt.ylabel("Key value")
-    plt.legend()
-    plt.show()
+    # plt.figure()
+    # plt.title("Key Values for given observations")
+    # plt.scatter(observations, max_seq, label="calculated values", c="r", marker="x")
+    # plt.scatter(observations, truth, label="actual values", c="b", marker="+")
+    # plt.xlabel("observation")
+    # plt.ylabel("Key value")
+    # plt.legend()
+    # plt.show()
+    return score, totalDistance
 
 
-# running the algorithm with given key profile and observation file
-runViterbi(S, song2Occurrence, song2Truth)
+# this function calculates the best transition matrix ratio for given key profile and observation
+def calculateBestRatio(key_profile, observation, truth):
+    maxScores = num.array([])
+    minDistances = num.array([])
+    max_score = 0
+    max_ratio = 0
+    min_distance = 1000
+    min_distance_ratio = 0
+    for i in num.arange(1.5, 100.5, 0.5):
+        score, distance = runViterbi(key_profile, i, observation, truth)
+        if score > max_score:
+            max_score = score
+            max_ratio = i
+            print("score for ratio " + str(i) + " is " + str(score))
+            maxScores = num.append(maxScores, i)
+        elif score == max_score:
+            print("score for ratio " + str(i) + " is " + str(score))
+            maxScores = num.append(maxScores, i)
+        if distance < min_distance:
+            min_distance = distance
+            min_distance_ratio = i
+            print("distance for ratio " + str(i) + " is " + str(distance))
+            minDistances = num.append(minDistances, i)
+        elif distance == min_distance:
+            print("distance for ratio " + str(i) + " is " + str(distance))
+            minDistances = num.append(minDistances, i)
+    print("Maximum score is " + str(max_score) + " resulted from ratio " + str(max_ratio))
+    print("\n")
+    print("Minimum distance is " + str(min_distance) + " resulted from ratio " + str(min_distance_ratio))
+    return max_score, max_ratio, min_distance, min_distance_ratio
+
+
+calculateBestRatio(SMM, potoDuration, potoTruth)
+
+
+# runViterbi(TS, 4, barbieDuration, barbieTruth)
 
 
 class viterbiAlgorithm():
