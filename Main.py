@@ -2,13 +2,10 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as num
 from typing import List, Optional, Tuple
+import xlsxwriter
+import re
 
 
-deneme=num.array([1,2,3,4,5,6])
-
-map={"deneme":deneme}
-
-print(map["deneme"])
    
 # This function takes the file location and converts it into a matrix.
 def CsvIntoMatrix(fileLocation):
@@ -653,7 +650,7 @@ class dictionaryKeeper():
     def getTruthArray(self,truthName):
         return self.__truthDict[truthName.lower()]
     def addKeyProfile(self,keyProfileName,keyProfileArray):
-        self.__keyProfileDict[keyProfileName.lower()]=keyProfileArray
+        self.__keyProfileDict[keyProfileName]=keyProfileArray
     def getKeyProfileArray(self,keyProfileName):
         return self.__keyProfileDict[keyProfileName]
     def storeKeyValues(self):
@@ -680,9 +677,66 @@ class dictionaryKeeper():
 
 
 
-
+class excelWriter():
+    #the actual excel file
+    __excelFile=""
+    #the worksheet we write
+    __workSheet=""
+    #column Headers should be ordered when given,it should be list
+    __columnHeaders=""
+    #row counter
+    __row=0
+    
+    def __init__(self,fileName,columnHeaders):
+        print("Creating the object")
+        self.__excelFile=xlsxwriter.Workbook(fileName+".xlsx")
+        self.__workSheet=self.__excelFile.add_worksheet()
+        self.__columnHeaders=columnHeaders
+        
+    def getExcelFile(self):
+        if(self.__excelFile != ""):
+            return self.__excelFile
+        else:
+            print("File not created")
+    def setColumnHeaders(self,colHeaderNames):
+        #col headers should be ordered
+        self.__columnHeaders=colHeaderNames
+    def writeColumnHeaders(self):
+        #check if the file is created
+        if(self.__workSheet == ""):
+            print("Document not created")
+        else:
+            for index in range(len(self.__columnHeaders)):
+                print("Writing the value {}".format(self.__columnHeaders[index]))
+                self.__workSheet.write(0,index,self.__columnHeaders[index])
+        self.__row+=1
+    def writeToFile(self,data):
+        #check if the file is created
+        if(self.__workSheet==""):
+            print("Document not created")
+        else:
+            #check the data and column header is same
+            if(len(self.__columnHeaders)==len(data)):
+                if(self.__row==0):
+                        self.writeColumnHeaders()
+                for index in range(len(data)):                    
+                    print("Writing the value {}".format(data[index]))
+                    self.__workSheet.write(self.__row,index,data[index])
+                    
+        self.__row+=1
+    def closeFile(self):
+        print("Closing the file")
+        self.__excelFile.close()
+                    
+            
+    
+     
+                
+    
+        
+    
 #first word for each dictionary string concat is song name
-#second word is the key profile matrix used
+#second word is the key profile matrix used it is all UPPERCASE !
 #third word is type used (presence,occurence,duration)
 #for example potodurationSMM
 class viterbiCalculator:
@@ -691,29 +745,93 @@ class viterbiCalculator:
     minDistanceDict={}
     minDistanceRatioDict={}
     __matrixHolder=dictionaryKeeper()
-
+    __presenceKeys={}
+    __occurenceKeys={}
+    __durationKeys={}
+    __truthKeys={}
+    __profileKeys={}
+    maxSongScore={}
+    maxSongScoreRatio={}
+    minSongDistance={}
+    minSongDistanceRatio={}
     def setDictionary(self,matrixHolder):
         self.__matrixHolder=matrixHolder
     def getDictionary(self):
         return self.__matrixHolder
     def printAllInfo(self):
+        i=0
         for maxScoreDict in self.maxScoreDict:
-            print("Inside array")
             print("Max score for the key {} is {}".format(maxScoreDict,self.maxScoreDict[maxScoreDict]))
             print("Max ratio for the key {} is {}".format(maxScoreDict,self.maxRatioDict[maxScoreDict]))
             print("Min distance for the key {} is {}".format(maxScoreDict,self.minDistanceDict[maxScoreDict]))
             print("Min distance ratio for the key {} is {}".format(maxScoreDict,self.minDistanceRatioDict[maxScoreDict]))
-      
+            
+            
+    def printBestInfo(self):
+        for bestResults in self.maxSongScore:
+            print("Max score for the key {} is {}".format(bestResults,self.maxSongScore[bestResults]))
+            print("Max ratio for the key {} is {}".format(bestResults,self.maxSongScoreRatio[bestResults]))
+        for bestResults in self.minSongDistance:
+            print("Min distance for the key {} is {}".format(bestResults,self.minSongDistance[bestResults]))
+            print("Min distance ratio for the key {} is {}".format(bestResults,self.minSongDistanceRatio[bestResults]))
+                    
+    def validateBestResultMaxScore(self):
+        maxScoreValue=0
+        songNameHolder=""
+        keyProfileNameHolder=""
+        sheetTypeHolder=""
+        maxScoreValueHolder=""
+        maxScoreRatioHolder=""
+        docHeaders=["Song Name","Best Key Profile","Type(Presence,Occurence,Duration)","Max Score","Max Score Ratio"]
+        maxScoreWriter=excelWriter("maxScoreSheet",docHeaders)
+        for songName in self.__presenceKeys:
+            songNameHolder=songName
+            maxScoreValue=0
+            maxScoreHolder=""
+            for maxScore in self.maxScoreDict:
+                if(songName in maxScore):
+                    if(self.maxScoreDict[maxScore]>maxScoreValue):
+                        maxScoreValue=self.maxScoreDict[maxScore]
+                        maxScoreHolder=maxScore
+            if(maxScoreHolder!=""):
+              upperString=re.findall('[A-Z]',maxScoreHolder)  
+              keyProfileNameHolder=''.join([str(elem) for elem in upperString])
+              sheetTypeHolder=maxScoreHolder.split(keyProfileNameHolder,1)[1]
+              self.maxSongScore[maxScoreHolder]=self.maxScoreDict[maxScoreHolder]
+              maxScoreValueHolder=self.maxScoreDict[maxScoreHolder]
+              self.maxSongScoreRatio[maxScoreHolder]=self.maxRatioDict[maxScoreHolder]
+              maxScoreRatioHolder=self.maxRatioDict[maxScoreHolder]
+              valuesToWriteToExcel=[songNameHolder,keyProfileNameHolder,sheetTypeHolder,maxScoreValueHolder,maxScoreRatioHolder]
+              maxScoreWriter.writeToFile(valuesToWriteToExcel)
+        maxScoreWriter.closeFile()
+                        
+    def validateBestResultMinDistance(self):
+        minDistanceValue=9999
+        for songName in self.__presenceKeys:
+            minDistanceValue=9999
+            minDistanceHolder=""
+            for minDistance in self.minDistanceDict:
+                if(songName in minDistance):
+                    if(self.minDistanceDict[minDistance]<minDistanceValue):
+                        minDistanceValue=self.minDistanceDict[minDistance]
+                        minDistanceHolder=minDistance
+            if(minDistanceHolder!=""):
+                self.minSongDistance[minDistanceHolder]=self.minDistanceDict[minDistanceHolder]
+                self.minSongDistanceRatio[minDistanceHolder]=self.minDistanceRatioDict[minDistanceHolder]
+                            
+                
+            
+        
     def calculateValues(self):
         self.__matrixHolder.storeKeyValues()
-        presenceKeys=self.__matrixHolder.returnKeyValues("presence")
-        occurenceKeys=self.__matrixHolder.returnKeyValues("occurence")
-        durationKeys=self.__matrixHolder.returnKeyValues("duration")
-        truthKeys=self.__matrixHolder.returnKeyValues("truth")
-        profileKeys=self.__matrixHolder.returnKeyValues("profile")
-        for truth in truthKeys:
+        self.__presenceKeys=self.__matrixHolder.returnKeyValues("presence")
+        self.__occurenceKeys=self.__matrixHolder.returnKeyValues("occurence")
+        self.__durationKeys=self.__matrixHolder.returnKeyValues("duration")
+        self.__truthKeys=self.__matrixHolder.returnKeyValues("truth")
+        self.__profileKeys=self.__matrixHolder.returnKeyValues("profile")
+        for truth in self.__truthKeys:
             truthArray=self.__matrixHolder.getTruthArray(truth)
-            for profile in profileKeys:
+            for profile in self.__profileKeys:
                 profileArray=self.__matrixHolder.getKeyProfileArray(profile)
                 presenceArray=self.__matrixHolder.getPresenceArray(truth)
                 occurenceArray=self.__matrixHolder.getOccurenceArray(truth)
@@ -751,14 +869,26 @@ matrixHolder.addTruth("japan",japanTruth)
 
 #updating the key values inside object
 
-
+#def writeData(self,excelData):
+#        if(len(excelData)!=len(self.__columnHeaders)):
+#            print("Illegal length the two should be with the same size")
+#        else:
+#            for    
 #viterbi object
-print("This after the object")
 viterbiObject=viterbiCalculator()
 viterbiObject.setDictionary(matrixHolder)
 viterbiObject.calculateValues()
-viterbiObject.printAllInfo()  
+viterbiObject.printAllInfo()
+viterbiObject.validateBestResultMaxScore()
+viterbiObject.validateBestResultMinDistance()
+viterbiObject.printBestInfo()
 #maxScore,maxRatio,minDistance,minDistRatio=calculateBestRatio(AE, japanOccurrence, japanTruth)
+#print("Max score {}".format(maxScore))
+#print("Max ratio {}".format(maxRatio))
+#print("Min distance {}".format(minDistance))
+#print("Min distance ratio {}".format(minDistRatio))
+#
+#maxScore,maxRatio,minDistance,minDistRatio=calculateBestRatio(AE, japanDuration, japanTruth)
 #print("Max score {}".format(maxScore))
 #print("Max ratio {}".format(maxRatio))
 #print("Min distance {}".format(minDistance))
