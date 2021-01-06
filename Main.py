@@ -785,8 +785,8 @@ class viterbiCalculator:
         docHeaders=["Song Name","Best Key Profile","Type(Presence,Occurence,Duration)","Max Score","Max Score Ratio"]
         maxScoreWriter=excelWriter("maxScoreSheet",docHeaders)
         for songName in self.__presenceKeys:
-            songNameHolder=songName
             maxScoreValue=0
+            songNameHolder=songName
             maxScoreHolder=""
             for maxScore in self.maxScoreDict:
                 if(songName in maxScore):
@@ -807,18 +807,34 @@ class viterbiCalculator:
                         
     def validateBestResultMinDistance(self):
         minDistanceValue=9999
+        songNameHolder=""
+        keyProfileNameHolder=""
+        sheetTypeHolder=""
+        minDistanceValueHolder=""
+        minDistanceRatioHolder=""
+        docHeaders=["Song Name","Best Key Profile","Type(Presence,Occurence,Duration)","Min Distance","Min Distance Ratio"]
+        minDistanceWriter=excelWriter("minDistanceSheet",docHeaders)
         for songName in self.__presenceKeys:
             minDistanceValue=9999
             minDistanceHolder=""
+            songNameHolder=songName
             for minDistance in self.minDistanceDict:
                 if(songName in minDistance):
                     if(self.minDistanceDict[minDistance]<minDistanceValue):
                         minDistanceValue=self.minDistanceDict[minDistance]
                         minDistanceHolder=minDistance
             if(minDistanceHolder!=""):
+                upperString=re.findall('[A-Z]',minDistanceHolder)  
+                keyProfileNameHolder=''.join([str(elem) for elem in upperString])
+                sheetTypeHolder=minDistanceHolder.split(keyProfileNameHolder,1)[1]
                 self.minSongDistance[minDistanceHolder]=self.minDistanceDict[minDistanceHolder]
+                minDistanceValueHolder=self.minDistanceDict[minDistanceHolder]
                 self.minSongDistanceRatio[minDistanceHolder]=self.minDistanceRatioDict[minDistanceHolder]
-                            
+                minDistanceRatioHolder=self.minDistanceRatioDict[minDistanceHolder]
+                valuesToWriteToExcel=[songNameHolder,keyProfileNameHolder,sheetTypeHolder,minDistanceValueHolder,minDistanceRatioHolder]
+                minDistanceWriter.writeToFile(valuesToWriteToExcel)
+            minDistanceWriter.closeFile()
+                               
                 
             
         
@@ -829,6 +845,8 @@ class viterbiCalculator:
         self.__durationKeys=self.__matrixHolder.returnKeyValues("duration")
         self.__truthKeys=self.__matrixHolder.returnKeyValues("truth")
         self.__profileKeys=self.__matrixHolder.returnKeyValues("profile")
+        docHeaders=["Song Name","Key Profile","Type(Presence,Occurence,Duration)","Max Score","Max Score Ratio","Min Distance","Min Distance Ratio"]
+        allValueWriter=excelWriter("allValuesSheet",docHeaders)
         for truth in self.__truthKeys:
             truthArray=self.__matrixHolder.getTruthArray(truth)
             for profile in self.__profileKeys:
@@ -837,9 +855,13 @@ class viterbiCalculator:
                 occurenceArray=self.__matrixHolder.getOccurenceArray(truth)
                 durationArray=self.__matrixHolder.getDurationArray(truth)
                 print("Inside the loop")
-                self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]=calculateBestRatio(profileArray, presenceArray, truthArray)                 
+                self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]=calculateBestRatio(profileArray, presenceArray, truthArray)
+                allValueWriter.writeToFile([truth,profile,"presence",self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]])                 
                 self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]=calculateBestRatio(profileArray, occurenceArray, truthArray)
+                allValueWriter.writeToFile([truth,profile,"occurence",self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]])                 
                 self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]=calculateBestRatio(profileArray, durationArray, truthArray)
+                allValueWriter.writeToFile([truth,profile,"duration",self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]])                 
+        allValueWriter.closeFile()
                 
     
                 
@@ -853,10 +875,23 @@ class viterbiCalculator:
 #dictionary keeper object
 matrixHolder=dictionaryKeeper()
 
-#putting the key profiles inside the object
+#putting the key profiles inside the object,13 profile total
+#name of the key profile MUST BE UPPERCASE FOR REGEX !
 matrixHolder.addKeyProfile("KK",KK)
 matrixHolder.addKeyProfile("AE",AE)
-#putting the first songs data into the object
+matrixHolder.addKeyProfile("BB",BB)
+matrixHolder.addKeyProfile("S",S)
+matrixHolder.addKeyProfile("T",T)
+matrixHolder.addKeyProfile("AS",AS)
+matrixHolder.addKeyProfile("TS",TS)
+matrixHolder.addKeyProfile("SNM",SNM)
+matrixHolder.addKeyProfile("SHM",SHM)
+matrixHolder.addKeyProfile("SMM",SMM)
+matrixHolder.addKeyProfile("ASTWO",AS2)
+matrixHolder.addKeyProfile("NSIX",N6)
+matrixHolder.addKeyProfile("NHUNDREDTWENTYEIGHT",N128)
+
+#putting the first songs data into the object,16 songs total
 matrixHolder.addPresence("barbie",barbiePresence)
 matrixHolder.addOccurence("barbie",barbieOccurrence)
 matrixHolder.addDuration("barbie",barbiePresence)
@@ -866,6 +901,90 @@ matrixHolder.addPresence("japan",japanPresence)
 matrixHolder.addOccurence("japan",japanOccurrence)
 matrixHolder.addDuration("japan",japanPresence)
 matrixHolder.addTruth("japan",japanTruth)
+#putting the third song data into the object
+matrixHolder.addPresence( "chiquitita",chiquititaPresence)
+matrixHolder.addOccurence("chiquitita",chiquititaOccurrence)
+matrixHolder.addDuration( "chiquitita",chiquititaPresence)
+matrixHolder.addTruth(    "chiquitita",chiquititaTruth)
+
+#putting the fourth song data into the object
+matrixHolder.addPresence( "crazy",crazyPresence)
+matrixHolder.addOccurence("crazy",crazyOccurrence)
+matrixHolder.addDuration( "crazy",crazyPresence)
+matrixHolder.addTruth(    "crazy",crazyTruth)
+
+#putting the fifth song data into the object
+matrixHolder.addPresence( "dancingQueen",dancingQueenPresence)
+matrixHolder.addOccurence("dancingQueen",dancingQueenOccurrence)
+matrixHolder.addDuration( "dancingQueen",dancingQueenPresence)
+matrixHolder.addTruth(    "dancingQueen",dancingQueenTruth)
+
+#putting the sixth song data into the object
+matrixHolder.addPresence( "fortuna",fortunaPresence)
+matrixHolder.addOccurence("fortuna",fortunaOccurrence)
+matrixHolder.addDuration( "fortuna",fortunaPresence)
+matrixHolder.addTruth(    "fortuna",fortunaTruth)
+
+#putting the seventh song data into the object
+matrixHolder.addPresence( "godzilla",godzillaPresence)
+matrixHolder.addOccurence("godzilla",godzillaOccurrence)
+matrixHolder.addDuration( "godzilla",godzillaPresence)
+matrixHolder.addTruth(    "godzilla",godzillaTruth)
+
+#putting the eight song data into the object
+matrixHolder.addPresence( "HowDeepIsYourLove",deepPresence)
+matrixHolder.addOccurence("HowDeepIsYourLove",deepOccurrence)
+matrixHolder.addDuration( "HowDeepIsYourLove",deepPresence)
+matrixHolder.addTruth(    "HowDeepIsYourLove",deepTruth)
+
+#putting the ninth song data into the object
+matrixHolder.addPresence( "NewWorldSymphony",newWorldSymphonyPresence)
+matrixHolder.addOccurence("NewWorldSymphony",newWorldSymphonyOccurrence)
+matrixHolder.addDuration( "NewWorldSymphony",newWorldSymphonyPresence)
+matrixHolder.addTruth(    "NewWorldSymphony",newWorldSymphonyTruth)
+
+#putting the 10. song data into the object
+matrixHolder.addPresence( "OneDayInYourLife",oneDayPresence)
+matrixHolder.addOccurence("OneDayInYourLife",oneDayOccurrence)
+matrixHolder.addDuration( "OneDayInYourLife",oneDayPresence)
+matrixHolder.addTruth(    "OneDayInYourLife",oneDayTruth)
+
+#putting the 11. song data into the object
+matrixHolder.addPresence( "PolovtsianDance",polovtsianPresence)
+matrixHolder.addOccurence("PolovtsianDance",polovtsianOccurrence)
+matrixHolder.addDuration( "PolovtsianDance",polovtsianPresence)
+matrixHolder.addTruth(    "PolovtsianDance",polovtsianTruth)
+
+#putting the 12. song data into the object
+matrixHolder.addPresence( "potoDance",potoPresence)
+matrixHolder.addOccurence("potoDance",potoOccurrence)
+matrixHolder.addDuration( "potoDance",potoPresence)
+matrixHolder.addTruth(    "potoDance",potoTruth)
+
+
+#putting the 13. song data into the object
+matrixHolder.addPresence( "ppfcDance",ppfcPresence)
+matrixHolder.addOccurence("ppfcDance",ppfcOccurrence)
+matrixHolder.addDuration( "ppfcDance",ppfcPresence)
+matrixHolder.addTruth(    "ppfcDance",ppfcTruth)
+
+#putting the 14. song data into the object
+matrixHolder.addPresence( "Song2Dance",song2Presence)
+matrixHolder.addOccurence("Song2Dance",song2Occurrence)
+matrixHolder.addDuration( "Song2Dance",song2Presence)
+matrixHolder.addTruth(    "Song2Dance",song2Truth)
+
+#putting the 15. song data into the object
+matrixHolder.addPresence( "stayinAlive",stayinAlivePresence)
+matrixHolder.addOccurence("stayinAlive",stayinAliveOccurrence)
+matrixHolder.addDuration( "stayinAlive",stayinAlivePresence)
+matrixHolder.addTruth(    "stayinAlive",stayinAliveTruth)
+
+#putting the 16. song data into the object
+matrixHolder.addPresence( "tmba",tmbaPresence)
+matrixHolder.addOccurence("tmba",tmbaOccurrence)
+matrixHolder.addDuration( "tmba",tmbaPresence)
+matrixHolder.addTruth(    "tmba",tmbaTruth)
 
 #updating the key values inside object
 
@@ -879,7 +998,7 @@ viterbiObject=viterbiCalculator()
 viterbiObject.setDictionary(matrixHolder)
 viterbiObject.calculateValues()
 viterbiObject.printAllInfo()
-viterbiObject.validateBestResultMaxScore()
+#viterbiObject.validateBestResultMaxScore()
 viterbiObject.validateBestResultMinDistance()
 viterbiObject.printBestInfo()
 #maxScore,maxRatio,minDistance,minDistRatio=calculateBestRatio(AE, japanOccurrence, japanTruth)
