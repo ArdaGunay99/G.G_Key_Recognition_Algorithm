@@ -264,26 +264,6 @@ tmbaOccurrence = CsvIntoMatrix("./TMBAOccurrence.csv")
 tmbaDuration = CsvIntoMatrix("./TMBADuration.csv")
 tmbaTruth = TruthIntoArray("./TMBATruth.csv")
 
-believePresence = CsvIntoMatrix("./BelievePresence.csv")
-believeOccurrence = CsvIntoMatrix("./BelieveOccurrence.csv")
-believeDuration = CsvIntoMatrix("./BelieveDuration.csv")
-believeTruth = TruthIntoArray("./BelieveTruth.csv")
-
-giabPresence = CsvIntoMatrix("./GiaBPresence.csv")
-giabOccurrence = CsvIntoMatrix("./GiaBOccurrence.csv")
-giabDuration = CsvIntoMatrix("./GiaBDuration.csv")
-giabTruth = TruthIntoArray("./GiaBTruth.csv")
-
-mhwgoPresence = CsvIntoMatrix("./MHWGOPresence.csv")
-mhwgoOccurrence = CsvIntoMatrix("./MHWGOOccurrence.csv")
-mhwgoDuration = CsvIntoMatrix("./MHWGODuration.csv")
-mhwgoTruth = TruthIntoArray("./MHWGOTruth.csv")
-
-survivorPresence = CsvIntoMatrix("./SurvivorPresence.csv")
-survivorOccurrence = CsvIntoMatrix("./SurvivorOccurrence.csv")
-survivorDuration = CsvIntoMatrix("./SurvivorDuration.csv")
-survivorTruth = TruthIntoArray("./SurvivorTruth.csv")
-
 # creating the key profile matrix proposed by Krumhansl and Kessler
 KK_C_Major_Profile = num.array([0.15195022732711172, 0.0533620483369227, 0.08327351040918879,
                                 0.05575496530270399, 0.10480976310122037, 0.09787030390045463,
@@ -558,6 +538,7 @@ def calculateBestRatio(key_profile, observation, truth,max_ratio=0,min_distance_
         score, distance = runViterbi(key_profile, i, observation, truth)
         if score > max_score:
             max_score = score
+            max_ratio = i
             #print("score for ratio " + str(i) + " is " + str(score))
             maxScores = num.append(maxScores, i)
         elif score == max_score:
@@ -565,6 +546,7 @@ def calculateBestRatio(key_profile, observation, truth,max_ratio=0,min_distance_
             maxScores = num.append(maxScores, i)
         if distance < min_distance:
             min_distance = distance
+            min_distance_ratio = i
             #print("distance for ratio " + str(i) + " is " + str(distance))
             minDistances = num.append(minDistances, i)
         elif distance == min_distance:
@@ -736,10 +718,11 @@ class excelWriter():
             #check the data and column header is same
             if(len(self.__columnHeaders)==len(data)):
                 if(self.__row==0):
-                    self.writeColumnHeaders()
+                        self.writeColumnHeaders()
                 for index in range(len(data)):                    
                     print("Writing the value {}".format(data[index]))
-                    self.__workSheet.write(self.__row,index,data[index])         
+                    self.__workSheet.write(self.__row,index,data[index])
+                    
         self.__row+=1
     def closeFile(self):
         print("Closing the file")
@@ -791,8 +774,7 @@ class viterbiCalculator:
         for bestResults in self.minSongDistance:
             print("Min distance for the key {} is {}".format(bestResults,self.minSongDistance[bestResults]))
             print("Min distance ratio for the key {} is {}".format(bestResults,self.minSongDistanceRatio[bestResults]))
-    
-    
+                    
     def validateBestResultMaxScore(self):
         maxScoreValue=0
         songNameHolder=""
@@ -852,95 +834,11 @@ class viterbiCalculator:
                 valuesToWriteToExcel=[songNameHolder,keyProfileNameHolder,sheetTypeHolder,minDistanceValueHolder,minDistanceRatioHolder]
                 minDistanceWriter.writeToFile(valuesToWriteToExcel)
         minDistanceWriter.closeFile()
-    
-    
-                  
-    def validateBestResultMaxScoreNoDup(self):
-        maxScoreValue=-1
-        keyProfileNameHolder=""
-        sheetTypeHolder=""
-        maxScoreValueHolder=""
-        maxScoreRatioHolder=""
-        maxScoreList=dict()
-        docHeaders=["Song Name","Best Key Profile","Type(Presence,Occurence,Duration)","Max Score","Max Score Ratio"]
-        maxScoreWriter=excelWriter("maxScoreSheet",docHeaders)
-        for songName in self.__presenceKeys:
-            maxScoreList=dict()
-            maxScoreValue=-1
-            for maxScore in self.maxScoreDict:
-                if(songName in maxScore):
-                    if(self.maxScoreDict[maxScore]>=maxScoreValue):
-                        maxScoreValue=self.maxScoreDict[maxScore]
-                        if(not maxScoreList):
-                            maxScoreList[maxScore]=maxScoreValue
-                        else:
-                            maxScoreListDup=dict(maxScoreList)
-                            for elem in maxScoreListDup:
-                                if(maxScoreValue>maxScoreListDup[elem]):
-                                    del maxScoreList[elem]
-                                    maxScoreList[maxScore]=maxScoreValue
-                                elif(maxScoreValue==maxScoreListDup[elem] and (maxScore.lower()!=elem.lower()) ):
-                                    maxScoreList[maxScore]=maxScoreValue
-            if(maxScoreList):
-                for value in maxScoreList:
-                    maxScoreValueHolder=maxScoreList[value]
-                    maxScoreHolder=value
-                    upperString=re.findall('[A-Z]',maxScoreHolder)  
-                    keyProfileNameHolder=''.join([str(elem) for elem in upperString])
-                    sheetTypeHolder=maxScoreHolder.split(keyProfileNameHolder,1)[1]
-                    self.maxSongScore[maxScoreHolder]=self.maxScoreDict[maxScoreHolder]
-                    maxScoreValueHolder=self.maxScoreDict[maxScoreHolder]
-                    self.maxSongScoreRatio[maxScoreHolder]=self.maxRatioDict[maxScoreHolder]
-                    maxScoreRatioHolder=self.maxRatioDict[maxScoreHolder]
-                    valuesToWriteToExcel=[songName,keyProfileNameHolder,sheetTypeHolder,maxScoreValueHolder,maxScoreRatioHolder]
-                    maxScoreWriter.writeToFile(valuesToWriteToExcel)
-        maxScoreWriter.closeFile()
-                        
-    def validateBestResultMinDistanceNoDup(self):
-        minDistanceValue=9999
-        keyProfileNameHolder=""
-        sheetTypeHolder=""
-        minDistanceValueHolder=""
-        minDistanceRatioHolder=""
-        minDistanceList=dict()
-        docHeaders=["Song Name","Best Key Profile","Type(Presence,Occurence,Duration)","Min Distance","Min Distance Ratio"]
-        minDistanceWriter=excelWriter("minDistanceSheet",docHeaders)
-        for songName in self.__presenceKeys:
-            minDistanceList=dict()
-            minDistanceHolder=""
-            for minDistance in self.minDistanceDict:
-                if(songName in minDistance):
-                    if(self.minDistanceDict[minDistance]<=minDistanceValue):
-                        minDistanceValue=self.minDistanceDict[minDistance]
-                        if(not minDistanceList):
-                            minDistanceList[minDistance]=minDistanceValue
-                        else:
-                            minDistanceListDup=dict(minDistanceList)
-                            for elem in minDistanceListDup:
-                                if(minDistanceValue<minDistanceListDup[elem]):
-                                    del minDistanceList[elem]
-                                    minDistanceList[minDistance]=minDistanceValue
-                                elif(minDistanceValue==minDistanceListDup[elem] and (minDistance.lower()!=elem.lower())):
-                                    minDistanceList[minDistance]=minDistanceValue                    
-            if(minDistanceList):
-                for value in minDistanceList:
-                    minDistanceValueHolder=minDistanceList[value]
-                    minDistanceHolder=value
-                    upperString=re.findall('[A-Z]',minDistanceHolder)  
-                    keyProfileNameHolder=''.join([str(elem) for elem in upperString])
-                    sheetTypeHolder=minDistanceHolder.split(keyProfileNameHolder,1)[1]
-                    self.minSongDistance[minDistanceHolder]=self.minDistanceDict[minDistanceHolder]
-                    minDistanceValueHolder=self.minDistanceDict[minDistanceHolder]
-                    self.minSongDistanceRatio[minDistanceHolder]=self.minDistanceRatioDict[minDistanceHolder]
-                    minDistanceRatioHolder=self.minDistanceRatioDict[minDistanceHolder]
-                    valuesToWriteToExcel=[songName,keyProfileNameHolder,sheetTypeHolder,minDistanceValueHolder,minDistanceRatioHolder]
-                    minDistanceWriter.writeToFile(valuesToWriteToExcel)
-        minDistanceWriter.closeFile()
                                
                 
             
         
-    def calculateValues(self,max_ratio=0,min_distance_ratio=0,valueType="notgiven",profileName="notknown"):
+    def calculateValues(self,max_ratio=0,min_distance_ratio=0):
         self.__matrixHolder.storeKeyValues()
         self.__presenceKeys=self.__matrixHolder.returnKeyValues("presence")
         self.__occurenceKeys=self.__matrixHolder.returnKeyValues("occurence")
@@ -949,60 +847,29 @@ class viterbiCalculator:
         self.__profileKeys=self.__matrixHolder.returnKeyValues("profile")
         docHeaders=["Song Name","Key Profile","Type(Presence,Occurence,Duration)","Max Score","Max Score Ratio","Min Distance","Min Distance Ratio"]
         allValueWriter=excelWriter("allValuesSheet",docHeaders)
-        for truth in self.__truthKeys:         
+        for truth in self.__truthKeys:
             truthArray=self.__matrixHolder.getTruthArray(truth)
-            checker=bool(False)
-            tempKeyHolder=""
             for profile in self.__profileKeys:
                 profileArray=self.__matrixHolder.getKeyProfileArray(profile)
                 presenceArray=self.__matrixHolder.getPresenceArray(truth)
                 occurenceArray=self.__matrixHolder.getOccurenceArray(truth)
                 durationArray=self.__matrixHolder.getDurationArray(truth)
                 print("Inside the loop")
-                if(profileName.lower()=="notknown" or checker):
-                    if(checker):
-                        checker=bool(False)
-                        profile=tempKeyHolder
-                    if(max_ratio!=0 and min_distance_ratio!=0):
-                        if(valueType.lower()=="notgiven"):                       
-                            self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]=calculateBestRatio(profileArray, presenceArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
-                            allValueWriter.writeToFile([truth,profile,"presence",self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]])                 
-                            self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]=calculateBestRatio(profileArray, occurenceArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
-                            allValueWriter.writeToFile([truth,profile,"occurence",self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]])                 
-                            self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]=calculateBestRatio(profileArray, durationArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
-                            allValueWriter.writeToFile([truth,profile,"duration",self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]])
-                        elif(valueType.lower()=="presence"):
-                            self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]=calculateBestRatio(profileArray, presenceArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
-                            allValueWriter.writeToFile([truth,profile,"presence",self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]])                 
-                        elif(valueType.lower()=="occurence"):
-                            self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]=calculateBestRatio(profileArray, occurenceArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
-                            allValueWriter.writeToFile([truth,profile,"occurence",self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]])                 
-                        elif(valueType.lower()=="duration"):
-                            self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]=calculateBestRatio(profileArray, durationArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
-                            allValueWriter.writeToFile([truth,profile,"duration",self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]])                      
-                    else:
-                        if(valueType.lower()=="notgiven"):
-                            self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]=calculateBestRatio(profileArray, presenceArray, truthArray)
-                            allValueWriter.writeToFile([truth,profile,"presence",self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]])                 
-                            self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]=calculateBestRatio(profileArray, occurenceArray, truthArray)
-                            allValueWriter.writeToFile([truth,profile,"occurence",self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]])                 
-                            self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]=calculateBestRatio(profileArray, durationArray, truthArray)
-                            allValueWriter.writeToFile([truth,profile,"duration",self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]])
-                        elif(valueType.lower()=="presence"):
-                            self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]=calculateBestRatio(profileArray, presenceArray, truthArray)
-                            allValueWriter.writeToFile([truth,profile,"presence",self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]])                 
-                        elif(valueType.lower()=="occurence"):
-                            self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]=calculateBestRatio(profileArray, occurenceArray, truthArray)
-                            allValueWriter.writeToFile([truth,profile,"occurence",self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]])                 
-                        elif(valueType.lower()=="duration"):
-                            self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]=calculateBestRatio(profileArray, durationArray, truthArray)
-                            allValueWriter.writeToFile([truth,profile,"duration",self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]])
-                elif(profile.lower()==profileName.lower()):
-                    checker=bool(True)
-                    tempKeyHolder=profile
+                if(max_ratio!=0 and min_distance_ratio!=0):
+                    self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]=calculateBestRatio(profileArray, presenceArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
+                    allValueWriter.writeToFile([truth,profile,"presence",self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]])                 
+                    self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]=calculateBestRatio(profileArray, occurenceArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
+                    allValueWriter.writeToFile([truth,profile,"occurence",self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]])                 
+                    self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]=calculateBestRatio(profileArray, durationArray, truthArray,max_ratio=max_ratio,min_distance_ratio=min_distance_ratio)
+                    allValueWriter.writeToFile([truth,profile,"duration",self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]])                 
                 else:
-                    continue                  
-        allValueWriter.closeFile()
+                    self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]=calculateBestRatio(profileArray, presenceArray, truthArray)
+                    allValueWriter.writeToFile([truth,profile,"presence",self.maxScoreDict[truth+profile+"presence"],self.maxRatioDict[truth+profile+"presence"],self.minDistanceDict[truth+profile+"presence"],self.minDistanceRatioDict[truth+profile+"presence"]])                 
+                    self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]=calculateBestRatio(profileArray, occurenceArray, truthArray)
+                    allValueWriter.writeToFile([truth,profile,"occurence",self.maxScoreDict[truth+profile+"occurence"],self.maxRatioDict[truth+profile+"occurence"],self.minDistanceDict[truth+profile+"occurence"],self.minDistanceRatioDict[truth+profile+"occurence"]])                 
+                    self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]=calculateBestRatio(profileArray, durationArray, truthArray)
+                    allValueWriter.writeToFile([truth,profile,"duration",self.maxScoreDict[truth+profile+"duration"],self.maxRatioDict[truth+profile+"duration"],self.minDistanceDict[truth+profile+"duration"],self.minDistanceRatioDict[truth+profile+"duration"]])                     
+                allValueWriter.closeFile()
                 
     
                 
@@ -1020,17 +887,6 @@ matrixHolder=dictionaryKeeper()
 #name of the key profile MUST BE UPPERCASE FOR REGEX !
 matrixHolder.addKeyProfile("KK",KK)
 matrixHolder.addKeyProfile("AE",AE)
-matrixHolder.addKeyProfile("BB",BB)
-matrixHolder.addKeyProfile("S",S)
-matrixHolder.addKeyProfile("T",T)
-matrixHolder.addKeyProfile("AS",AS)
-matrixHolder.addKeyProfile("TS",TS)
-matrixHolder.addKeyProfile("SNM",SNM)
-matrixHolder.addKeyProfile("SHM",SHM)
-matrixHolder.addKeyProfile("SMM",SMM)
-matrixHolder.addKeyProfile("ASTWO",AS2)
-matrixHolder.addKeyProfile("NSIX",N6)
-matrixHolder.addKeyProfile("NHUNDREDTWENTYEIGHT",N128)
 
 #putting the first songs data into the object,16 songs total
 matrixHolder.addPresence("barbie",barbiePresence)
@@ -1047,110 +903,6 @@ matrixHolder.addPresence( "chiquitita",chiquititaPresence)
 matrixHolder.addOccurence("chiquitita",chiquititaOccurrence)
 matrixHolder.addDuration( "chiquitita",chiquititaDuration)
 matrixHolder.addTruth(    "chiquitita",chiquititaTruth)
-
-#putting the fourth song data into the object
-matrixHolder.addPresence( "crazy",crazyPresence)
-matrixHolder.addOccurence("crazy",crazyOccurrence)
-matrixHolder.addDuration( "crazy",crazyDuration)
-matrixHolder.addTruth(    "crazy",crazyTruth)
-
-#putting the fifth song data into the object
-matrixHolder.addPresence( "dancingQueen",dancingQueenPresence)
-matrixHolder.addOccurence("dancingQueen",dancingQueenOccurrence)
-matrixHolder.addDuration( "dancingQueen",dancingQueenDuration)
-matrixHolder.addTruth(    "dancingQueen",dancingQueenTruth)
-
-#putting the sixth song data into the object
-matrixHolder.addPresence( "fortuna",fortunaPresence)
-matrixHolder.addOccurence("fortuna",fortunaOccurrence)
-matrixHolder.addDuration( "fortuna",fortunaDuration)
-matrixHolder.addTruth(    "fortuna",fortunaTruth)
-
-#putting the seventh song data into the object
-matrixHolder.addPresence( "godzilla",godzillaPresence)
-matrixHolder.addOccurence("godzilla",godzillaOccurrence)
-matrixHolder.addDuration( "godzilla",godzillaDuration)
-matrixHolder.addTruth(    "godzilla",godzillaTruth)
-
-#putting the eight song data into the object
-matrixHolder.addPresence( "HowDeepIsYourLove",deepPresence)
-matrixHolder.addOccurence("HowDeepIsYourLove",deepOccurrence)
-matrixHolder.addDuration( "HowDeepIsYourLove",deepDuration)
-matrixHolder.addTruth(    "HowDeepIsYourLove",deepTruth)
-
-#putting the ninth song data into the object
-matrixHolder.addPresence( "NewWorldSymphony",newWorldSymphonyPresence)
-matrixHolder.addOccurence("NewWorldSymphony",newWorldSymphonyOccurrence)
-matrixHolder.addDuration( "NewWorldSymphony",newWorldSymphonyDuration)
-matrixHolder.addTruth(    "NewWorldSymphony",newWorldSymphonyTruth)
-
-#putting the 10. song data into the object
-matrixHolder.addPresence( "OneDayInYourLife",oneDayPresence)
-matrixHolder.addOccurence("OneDayInYourLife",oneDayOccurrence)
-matrixHolder.addDuration( "OneDayInYourLife",oneDayDuration)
-matrixHolder.addTruth(    "OneDayInYourLife",oneDayTruth)
-
-#putting the 11. song data into the object
-matrixHolder.addPresence( "PolovtsianDance",polovtsianPresence)
-matrixHolder.addOccurence("PolovtsianDance",polovtsianOccurrence)
-matrixHolder.addDuration( "PolovtsianDance",polovtsianDuration)
-matrixHolder.addTruth(    "PolovtsianDance",polovtsianTruth)
-
-#putting the 12. song data into the object
-matrixHolder.addPresence( "potoDance",potoPresence)
-matrixHolder.addOccurence("potoDance",potoOccurrence)
-matrixHolder.addDuration( "potoDance",potoDuration)
-matrixHolder.addTruth(    "potoDance",potoTruth)
-
-
-#putting the 13. song data into the object
-matrixHolder.addPresence( "ppfcDance",ppfcPresence)
-matrixHolder.addOccurence("ppfcDance",ppfcOccurrence)
-matrixHolder.addDuration( "ppfcDance",ppfcDuration)
-matrixHolder.addTruth(    "ppfcDance",ppfcTruth)
-
-#putting the 14. song data into the object
-matrixHolder.addPresence( "Song2Dance",song2Presence)
-matrixHolder.addOccurence("Song2Dance",song2Occurrence)
-matrixHolder.addDuration( "Song2Dance",song2Duration)
-matrixHolder.addTruth(    "Song2Dance",song2Truth)
-
-#putting the 15. song data into the object
-matrixHolder.addPresence( "stayinAlive",stayinAlivePresence)
-matrixHolder.addOccurence("stayinAlive",stayinAliveOccurrence)
-matrixHolder.addDuration( "stayinAlive",stayinAliveDuration)
-matrixHolder.addTruth(    "stayinAlive",stayinAliveTruth)
-
-#putting the 16. song data into the object
-matrixHolder.addPresence( "tmba",tmbaPresence)
-matrixHolder.addOccurence("tmba",tmbaOccurrence)
-matrixHolder.addDuration( "tmba",tmbaDuration)
-matrixHolder.addTruth(    "tmba",tmbaTruth)
-
-#putting the 17. song data into the object
-matrixHolder.addPresence( "believe",believePresence)
-matrixHolder.addOccurence("believe",believeOccurrence)
-matrixHolder.addDuration( "believe",believeDuration)
-matrixHolder.addTruth(    "believe",believeTruth)
-
-#putting the 18. song data into the object
-matrixHolder.addPresence( "giab",giabPresence)
-matrixHolder.addOccurence("giab",giabOccurrence)
-matrixHolder.addDuration( "giab",giabDuration)
-matrixHolder.addTruth(    "giab",giabTruth)
-
-#putting the 19. song data into the object
-matrixHolder.addPresence( "mhwgo",mhwgoPresence)
-matrixHolder.addOccurence("mhwgo",mhwgoOccurrence)
-matrixHolder.addDuration( "mhwgo",mhwgoDuration)
-matrixHolder.addTruth(    "mhwgo",mhwgoTruth)
-
-#putting the 20. song data into the object
-matrixHolder.addPresence( "survivor",survivorPresence)
-matrixHolder.addOccurence("survivor",survivorOccurrence)
-matrixHolder.addDuration( "survivor",survivorDuration)
-matrixHolder.addTruth(    "survivor",survivorTruth)
-
 #updating the key values inside object
 
 #def writeData(self,excelData):
@@ -1161,81 +913,12 @@ matrixHolder.addTruth(    "survivor",survivorTruth)
 #viterbi object
 viterbiObject=viterbiCalculator()
 viterbiObject.setDictionary(matrixHolder)
-viterbiObject.calculateValues(max_ratio=1.5,min_distance_ratio=1.5,valueType="duration",profileName="s")
+viterbiObject.calculateValues()
 viterbiObject.printAllInfo()
 #viterbiObject.validateBestResultMaxScore()
 viterbiObject.validateBestResultMinDistance()
-viterbiObject.printBestInfo()
-viterbiObject.validateBestResultMaxScore()
-#maxScore,maxRatio,minDistance,minDistRatio=calculateBestRatio(AE, japanOccurrence, japanTruth)
-#print("Max score {}".format(maxScore))
-#print("Max ratio {}".format(maxRatio))
-#print("Min distance {}".format(minDistance))
-#print("Min distance ratio {}".format(minDistRatio))
-#
-#maxScore,maxRatio,minDistance,minDistRatio=calculateBestRatio(AE, japanDuration, japanTruth)
-#print("Max score {}".format(maxScore))
-#print("Max ratio {}".format(maxRatio))
-#print("Min distance {}".format(minDistance))
-#print("Min distance ratio {}".format(minDistRatio))
-
-
-#Max score for the key japanaeoccurence is 0
-#Max ratio for the key japanaeoccurence is 0
-#Min distance for the key japanaeoccurence is 9.680000000000007
-#Min distance ratio for the key japanaeoccurence is 1.5           
+viterbiObject.printBestInfo()      
     
-    
-#results from this for max score calculation are
-#6, 1.5 max score ratio
-#3, 2 max score ratio
-#2, 2.5 max score ratio
-#1, 4.5 max scora ratio
-#1, 4 max score ratio
-#1, 14,5 max score ratio
-
-#best ratio is 1.5
-
-
-#11, presence
-#3,  occurence
-#2,  duration
-
-#best type is the presence
-
-
-#13, TS
-#2,  N128
-#1,  S
-
-
-#best key profile is TS
-
-
-#results from this for min distance are
-
-#8, 1.5 min distance ratio
-#2, 2.5 min distance ratio
-#2, 2 min distance ratio
-#1, 4.5 min distance ratio
-#1  4 min distance ratio
-#1  14.5 min distance ratio
-#1  5 min distance ratio
-
-#best ratio is 1.5
-
-#11, presence
-#2,  occurence
-#3,  duration
-
-#best type is presence
-
-#13, TS
-#2,  N128
-#1,  S
-
-
-
     
     
 
